@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>정보보안 실천 수행평가</title>
+<style>
+:root{--ink:#17202a;--mut:#5b6672;--line:#c9d1d9;--acc:#1f5fbf;--bad:#b3261e;--ok:#1b7f3b;--bg:#f3f5f8}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;font-size:16px}
+#top{position:sticky;top:0;z-index:50;background:#fff;border-bottom:2px solid var(--acc);padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+#top .brand{font-weight:700;color:var(--acc);margin-right:6px}
+#top label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+#top input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;width:120px}
+#top input#sname{width:110px}#top input#code{width:100px}
+#top input:disabled{background:#eef1f4;color:#333}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--acc);background:var(--acc);color:#fff;padding:7px 16px;font-weight:700}
+button.sub{background:#fff;color:var(--acc)}
+button:disabled{opacity:.5;cursor:default}
+#bar{margin-left:auto;display:flex;gap:14px;font-size:14px;font-weight:600;color:var(--mut)}
+#bar b{color:var(--ink)}#timer.warn{color:var(--bad)}
+#msg{width:100%;font-size:14px;color:var(--bad);font-weight:600;min-height:0}
+main{max-width:920px;margin:18px auto 80px;padding:0 16px}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:16px}
+.box h2{margin:0 0 8px;font-size:18px}
+.box li{margin:4px 0}
+.q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:14px}
+.q .qt{font-weight:700;margin:0 0 10px}
+.note{font-size:13px;color:var(--mut);font-weight:400}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px}
+.card{border:1px solid var(--line);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fafbfc}
+.card .nm{font-weight:600}
+.card label{margin-left:8px;white-space:nowrap}
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cases div{border:1px solid var(--line);border-radius:8px;background:#fff}
+.cases h4{margin:0;padding:6px 12px;background:#eef2f7;border-bottom:1px solid var(--line);text-align:center}
+.cases p{margin:0;padding:10px 12px;font-size:15px;text-align:justify}
+.cond{border:1px solid var(--mut);border-radius:6px;padding:8px 12px;margin:6px 0 10px;font-size:14px;background:#fcfcfd}
+.cond b{display:block;text-align:center}
+textarea,select{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{min-height:84px;resize:vertical}
+.row{margin:8px 0}.row>span{display:block;font-weight:600;margin-bottom:3px}
+.opts label{display:inline-block;margin:2px 16px 2px 0}
+.sum{font-size:14px;color:var(--mut);margin-top:8px}
+.q,.cases,.box{-webkit-user-select:none;user-select:none}
+textarea,input{-webkit-user-select:text;user-select:text}
+.overlay{position:fixed;inset:0;background:#0f172a;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.overlay[hidden]{display:none}
+.dlg{background:#fff;border-radius:12px;padding:24px 28px;max-width:540px;width:100%}
+.dlg h3{margin:0 0 8px}.dlg .bad{color:var(--bad);font-weight:700}
+.dlg .btns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+#done{max-width:640px;margin:60px auto;text-align:center}
+#done .ok{color:var(--ok);font-size:22px;font-weight:700}
+@media(max-width:700px){.cards,.cases{grid-template-columns:1fr}}
+@media print{body>*{display:none!important}}
+</style>
+</head>
+<body>
+<header id="top">
+  <span class="brand">정보보안 실천 수행평가</span>
+  <label>학번 <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="예: 10305"></label>
+  <label>이름 <input id="sname" maxlength="10" autocomplete="off"></label>
+  <label id="codeWrap">시험 코드 <input id="code" maxlength="8" autocomplete="off"></label>
+  <button id="startBtn" type="button">시험 시작</button>
+  <div id="bar" hidden><span>남은 시간 <b id="timer">--:--</b></span><span>이탈 <b id="vcount">0</b>/<b id="vmax">3</b></span></div>
+  <div id="msg" role="alert"></div>
+</header>
+
+<main id="intro">
+  <div class="box">
+    <h2>[중요] 시작하기 전에 꼭 읽어보기</h2>
+    <ol>
+      <li>화면 맨 위에 <b>학번(5자리)</b>, <b>이름</b>, 선생님이 알려 준 <b>시험 코드</b>를 입력하고 [시험 시작]을 누릅니다. (학번 예: 1학년 7반 35번 → 10735)</li>
+      <li>시험은 <b>전체 화면</b>으로 진행됩니다. 시험 중에 <b>다른 창·탭으로 이동하거나 전체 화면을 끄면 ‘이탈’</b>로 기록됩니다.</li>
+      <li>이탈은 <b>선생님의 스프레드시트에 시각과 함께 기록</b>되고, <b>3번째 이탈이 되면 그때까지 쓴 답안이 자동으로 제출</b>됩니다.</li>
+      <li>복사·붙여넣기, 마우스 오른쪽 버튼, 인쇄, 개발자 도구 단축키는 사용할 수 없고, <b>시도한 횟수가 기록</b>됩니다. 모든 답은 직접 입력하세요.</li>
+      <li>시험 중에는 <b>생성형 AI·검색·메신저·다른 프로그램을 사용할 수 없습니다.</li>
+      <li>답안은 이 화면에서 직접 입력합니다. 마지막에 <b>[제출하기]</b>를 눌러야 제출됩니다. 제출한 뒤에는 고칠 수 없습니다.</li>
+      <li>화면이 꺼지거나 새로고침이 되어도 같은 학번·이름·시험 코드로 다시 들어오면 쓰던 답안과 남은 시간이 이어집니다(재접속 횟수는 기록됩니다).</li>
+    </ol>
+  </div>
+</main>
+<main id="exam" hidden></main>
+
+<div id="lock" class="overlay" hidden>
+  <div class="dlg"><h3 class="bad">시험 화면을 벗어났습니다</h3>
+    <p id="lockWhy"></p><p>이탈 <b id="lockN"></b>회가 기록되었습니다. <b id="lockLeft"></b></p>
+    <div class="btns"><button id="resumeBtn" type="button">시험으로 돌아가기</button></div>
+  </div>
+</div>
+<div id="modal" class="overlay" hidden>
+  <div class="dlg"><h3 id="mTitle"></h3><div id="mBody"></div>
+    <div class="btns"><button id="mNo" class="sub" type="button">계속 작성</button><button id="mYes" type="button">제출하기</button></div>
+  </div>
+</div>
+<div id="sending" class="overlay" hidden>
+  <div class="dlg"><h3 id="sendTitle">답안을 제출하는 중입니다…</h3><div id="sendBody"></div>
+    <div class="btns"><button id="dlBtn" class="sub" type="button" hidden>답안 파일 저장</button><button id="retryBtn" type="button" hidden>다시 제출</button></div>
+  </div>
+</div>
+<div id="done" hidden></div>
+
+<script>
+'use strict';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyaD6htmH4lvi7X0D2pCQIce2uARYU2y91YIRxMNuFnH8R3kUpzwbN557K0N6UNdss/exec';   // ← Apps Script 배포 후 받은 /exec 주소를 붙여 넣으세요
+const THREATS = ['디도스', '악성코드', '해킹', '파밍'];
+const TECHS = ['개인 암호 설정·변경', '기기·클라우드 접근 제어', '바이러스 백신 설정'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const S = {started:false, submitted:false, submitting:false, away:false, awayAt:0, v:0, fsExits:0, pasteTries:0,
+           sid:'', name:'', token:'', set:0, cls:0, num:0, cards:[], policy:{max:3}, startedAt:0, endAt:0, offset:0, events:[]};
+
+/* ───────── 통신 ───────── */
+async function api(obj, ms) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms || 15000);
+  try {
+    const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(obj), signal:ctl.signal, redirect:'follow'});
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+const nowSrv = () => Date.now() + S.offset;
+function setMsg(t) { $('msg').textContent = t || ''; }
+
+/* ───────── 기록 ───────── */
+function log(type, detail) {
+  if (!S.started) return;
+  S.events.push({t: nowSrv(), type, detail: String(detail || '').slice(0, 100)});
+  if (S.events.length >= 20) flush();
+}
+async function flush() {
+  if (!S.token || !S.events.length || S.submitted) return;
+  const ev = S.events.splice(0);
+  try { const r = await api({action:'log', sid:S.sid, token:S.token, events:ev, v:S.v, paste:S.pasteTries}); if (!r.ok) throw 0; }
+  catch (e) { S.events.unshift(...ev); }
+}
+setInterval(flush, 15000);
+function beacon() {
+  if (!S.started || S.submitted || !S.token) return;
+  const ev = S.events.splice(0); ev.push({t: nowSrv(), type:'창 닫힘/이동', detail:''});
+  try { navigator.sendBeacon(API_URL, new Blob([JSON.stringify({action:'log', sid:S.sid, token:S.token, events:ev, v:S.v, paste:S.pasteTries})], {type:'text/plain;charset=utf-8'})); } catch (e) {}
+}
+window.addEventListener('pagehide', beacon);
+window.addEventListener('beforeunload', e => { if (S.started && !S.submitted) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ───────── 이탈 처리 ───────── */
+function updateBar() { $('vcount').textContent = S.v; $('vmax').textContent = S.policy.max; }
+function leave(cause) {
+  if (!S.started || S.submitted || S.submitting) return;
+  if (S.away) { log('이탈 중 추가', cause); return; }
+  S.away = true; S.awayAt = Date.now(); S.v++;
+  if (cause === '전체 화면 해제') S.fsExits++;
+  log('이탈', cause); updateBar(); flush();
+  if (S.v >= S.policy.max) { submit('자동제출-이탈'); return; }
+  $('lockWhy').textContent = '사유: ' + cause;
+  $('lockN').textContent = S.v + '/' + S.policy.max;
+  $('lockLeft').textContent = '앞으로 ' + (S.policy.max - S.v) + '번 더 이탈하면 답안이 자동 제출됩니다.';
+  $('lock').hidden = false;
+}
+async function resume() {
+  try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); } catch (e) {}
+  if (!document.fullscreenElement) { $('lockWhy').textContent = '전체 화면으로 돌아가지 못했습니다. 다시 눌러 주세요.'; return; }
+  if (document.visibilityState !== 'visible') return;
+  log('복귀', Math.round((Date.now() - S.awayAt) / 1000) + '초');
+  S.away = false; $('lock').hidden = true;
+  lockKeys();
+}
+$('resumeBtn').addEventListener('click', resume);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') leave('다른 탭/창으로 이동'); });
+window.addEventListener('blur', () => setTimeout(() => { if (S.started && !document.hasFocus() && document.visibilityState === 'visible') leave('창 포커스 이탈'); }, 400));
+document.addEventListener('fullscreenchange', () => { if (S.started && !S.submitted && !document.fullscreenElement) leave('전체 화면 해제'); });
+function lockKeys() { try { if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['Escape']).catch(() => {}); } catch (e) {} }
+
+/* ───────── 복사·붙여넣기·단축키 차단 ───────── */
+function pasteTry(kind) { if (S.started && !S.submitted) { S.pasteTries++; log('붙여넣기/복사 시도', kind); } }
+['copy', 'cut'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); pasteTry(ev); }, true));
+['paste', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); pasteTry(ev); }, true));
+['contextmenu', 'dragstart'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), true));
+document.addEventListener('beforeinput', e => {
+  const t = e.inputType || '';
+  if (/^insertFrom(Paste|Drop|Yank)/.test(t) || t === 'insertReplacementText' || t === 'insertFromPasteAsQuotation' ||
+      (t === 'insertText' && e.data && e.data.length > 12 && !e.isComposing)) {
+    e.preventDefault(); pasteTry(t);
+  }
+}, true);
+document.addEventListener('keydown', e => {
+  const k = (e.key || '').toLowerCase(), mod = e.ctrlKey || e.metaKey;
+  if ((mod && k === 'v') || (e.shiftKey && k === 'insert')) { e.preventDefault(); pasteTry('단축키 붙여넣기'); return; }
+  if ((mod && (k === 'c' || k === 'x') && !e.shiftKey) || (mod && ['u', 's', 'p'].includes(k)) || e.key === 'F12' || (mod && e.shiftKey && ['i', 'j', 'c'].includes(k))) {
+    e.preventDefault(); if (S.started) log('단축키 차단', (mod ? 'Ctrl+' : '') + (e.shiftKey ? 'Shift+' : '') + e.key);
+  }
+  if (e.key === 'Meta' && S.started) log('윈도우 키', '');
+}, true);
+window.addEventListener('beforeprint', () => log('인쇄 시도', ''));
+
+/* ───────── 화면 구성 ───────── */
+function render() {
+  const q = S;
+  const cards = q.cards.map((c, i) => `<div class="card"><span class="nm">${esc(c.sym)} ${esc(c.name)}</span><span>
+      <label><input type="radio" name="c${i}" value="P"> 보호</label><label><input type="radio" name="c${i}" value="S"> 공유</label></span></div>`).join('');
+  const cond = lab => `<div class="cond"><b>조건</b>◦ 정보보안 위협 요소 : [디도스, 악성코드, 해킹, 파밍] 중 1가지를 선택할 것.<br>◦ 선택한 위협 요소의 특징을 [${lab}]에 나타난 사실과 관련지어 2가지 이상 구체적으로 작성할 것.</div>`;
+  const threat = (n, lab) => `<div class="q"><p class="qt">${n}. [${lab}]의 상황에서 나타난 정보보안 위협 요소와 그 특징을 &lt;조건&gt;에 맞게 서술하시오.</p>${cond(lab)}
+      <div class="row opts"><span>1) 정보보안 위협 요소</span>${THREATS.map(t => `<label><input type="radio" name="t${n}" value="${t}"> ${t}</label>`).join('')}</div>
+      <div class="row"><span>2) 특징</span><textarea id="f${n}" rows="4"></textarea></div></div>`;
+  $('exam').innerHTML = `
+  <div class="q"><p class="qt">1. 다음 정보를 ‘보호해야 할 정보’와 ‘공유해야 할 정보’로 분류하시오. <span class="note">(각 정보마다 하나씩 선택)</span></p>
+    <div class="cards">${cards}</div><div class="sum" id="q1sum"></div></div>
+  <div class="q"><p class="qt">2. 정보보안의 개념을 쓰고, 정보보안이 필요한 까닭을 1가지 이상 쓰시오.</p>
+    <div class="row"><span>1) 개념</span><textarea id="q2c" rows="3"></textarea></div>
+    <div class="row"><span>2) 필요성</span><textarea id="q2n" rows="3"></textarea></div></div>
+  <div class="box"><p class="qt" style="margin-top:0"><b>[3~5]</b> [가]와 [나]는 정보보안 기술의 적용이 필요한 상황이다. 다음을 읽고 물음에 답하시오.</p>
+    <div class="cases"><div><h4>[가]</h4><p>${esc(q.ga)}</p></div><div><h4>[나]</h4><p>${esc(q.na)}</p></div></div></div>
+  ${threat(3, '가')}${threat(4, '나')}
+  <div class="q"><p class="qt">5. [가], [나]와 같은 피해를 막기 위해 보안 기술을 활용하려 한다. 물음에 답하시오. <span class="note">※ [가], [나]는 위의 사례를 참고하시오.</span></p>
+    <p><b>1)</b> <b>1번</b>에서 ‘보호해야 할 정보’로 분류한 것 중 1가지를 골라 쓰고, 그 정보를 지키기 위해 활용한 기술을 1가지 선택하여 개념을 작성하시오.</p>
+    <div class="row"><span>① 선택한 정보</span><select id="q5i"></select></div>
+    <div class="row opts"><span>② 선택한 보안 기술</span>${TECHS.map(t => `<label><input type="radio" name="q5t" value="${t}"> ${t}</label>`).join('')}</div>
+    <div class="row"><span>③ 개념</span><textarea id="q5c" rows="3"></textarea></div>
+    <p><b>2)</b> 정보보안 위협 요소를 예방하기 위해 제시할 수 있는 디지털 윤리 실천 방법을 3가지만 제시하시오.</p>
+    ${['①', '②', '③'].map((m, i) => `<div class="row"><span>${m}</span><textarea id="e${i}" rows="3"></textarea></div>`).join('')}</div>
+  <div style="text-align:right"><button id="submitBtn" type="button">제출하기</button></div>`;
+  document.querySelectorAll('#exam textarea').forEach(t => {
+    t.setAttribute('autocomplete', 'off'); t.setAttribute('autocorrect', 'off'); t.setAttribute('autocapitalize', 'off');
+    t.setAttribute('spellcheck', 'false'); t.setAttribute('writingsuggestions', 'false');
+    t.setAttribute('data-gramm', 'false'); t.setAttribute('data-gramm_editor', 'false'); t.setAttribute('data-enable-grammarly', 'false');
+  });
+  $('exam').addEventListener('input', onEdit); $('exam').addEventListener('change', onEdit);
+  $('submitBtn').addEventListener('click', confirmSubmit);
+  refreshProtectList();
+}
+function refreshProtectList() {
+  const sel = $('q5i'), cur = sel.value;
+  const prot = S.cards.filter((c, i) => (document.querySelector(`input[name=c${i}]:checked`) || {}).value === 'P');
+  sel.innerHTML = `<option value="">${prot.length ? '1번에서 ‘보호’로 분류한 정보 중 선택' : '먼저 1번을 분류하세요'}</option>` +
+    prot.map(c => `<option value="${esc(c.name)}">${esc(c.sym)} ${esc(c.name)}</option>`).join('');
+  if (prot.some(c => c.name === cur)) sel.value = cur;
+  const p = prot.map(c => c.sym).join(' '), s = S.cards.filter((c, i) => (document.querySelector(`input[name=c${i}]:checked`) || {}).value === 'S').map(c => c.sym).join(' ');
+  $('q1sum').textContent = `보호해야 할 정보: ${p || '-'}　/　공유해야 할 정보: ${s || '-'}`;
+}
+function collect() {
+  const a = {q1:{}, q2:{concept:$('q2c').value, need:$('q2n').value}, q3:{}, q4:{}, q5:{}};
+  S.cards.forEach((c, i) => { const r = document.querySelector(`input[name=c${i}]:checked`); a.q1[c.sym] = r ? r.value : ''; });
+  [3, 4].forEach(n => { const r = document.querySelector(`input[name=t${n}]:checked`); a['q' + n] = {threat: r ? r.value : '', feature: $('f' + n).value}; });
+  const tr = document.querySelector('input[name=q5t]:checked');
+  a.q5 = {info:$('q5i').value, tech: tr ? tr.value : '', concept:$('q5c').value, eth:[0, 1, 2].map(i => $('e' + i).value)};
+  return a;
+}
+function applyAnswers(a) {
+  try {
+    S.cards.forEach((c, i) => { const v = (a.q1 || {})[c.sym]; if (v) { const r = document.querySelector(`input[name=c${i}][value=${v}]`); if (r) r.checked = true; } });
+    refreshProtectList();
+    $('q2c').value = (a.q2 || {}).concept || ''; $('q2n').value = (a.q2 || {}).need || '';
+    [3, 4].forEach(n => { const x = a['q' + n] || {}; if (x.threat) { const r = document.querySelector(`input[name=t${n}][value="${x.threat}"]`); if (r) r.checked = true; } $('f' + n).value = x.feature || ''; });
+    const q5 = a.q5 || {}; if (q5.info) $('q5i').value = q5.info;
+    if (q5.tech) { const r = document.querySelector(`input[name=q5t][value="${q5.tech}"]`); if (r) r.checked = true; }
+    $('q5c').value = q5.concept || ''; (q5.eth || []).forEach((v, i) => { if ($('e' + i)) $('e' + i).value = v; });
+  } catch (e) {}
+}
+let saveT = 0;
+function onEdit(e) {
+  if (e.target && e.target.name && /^c\d+$/.test(e.target.name)) refreshProtectList();
+  clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem('exam_' + S.token, JSON.stringify(collect())); } catch (x) {} }, 400);
+}
+
+/* ───────── 시작 ───────── */
+async function onStart() {
+  setMsg('');
+  const sid = $('sid').value.trim(), name = $('sname').value.trim(), code = $('code').value.trim();
+  if (API_URL.indexOf('PASTE_') === 0) { setMsg('설정 오류: index.html 의 API_URL 이 비어 있습니다. 선생님께 알려 주세요.'); return; }
+  if (!/^\d{5}$/.test(sid)) { setMsg('학번은 숫자 5자리입니다. (예: 1학년 3반 5번 → 10305)'); return; }
+  if (!name) { setMsg('이름을 입력하세요.'); return; }
+  if (!code) { setMsg('시험 코드를 입력하세요.'); return; }
+  if (!document.documentElement.requestFullscreen) { setMsg('이 브라우저에서는 시험을 볼 수 없습니다. Chrome 또는 Edge를 사용하세요.'); return; }
+  $('startBtn').disabled = true;
+  try { await document.documentElement.requestFullscreen(); }       // 클릭 직후에 호출해야 허용됨
+  catch (e) { setMsg('전체 화면으로 바꾸지 못했습니다. 브라우저 설정을 확인하거나 선생님께 알려 주세요.'); $('startBtn').disabled = false; return; }
+  let res;
+  try { res = await api({action:'start', sid, name, code, ua:navigator.userAgent}); }
+  catch (e) { res = {ok:false, msg:'서버에 연결하지 못했습니다. 네트워크를 확인하고 다시 시도하세요.'}; }
+  if (!res.ok) { try { await document.exitFullscreen(); } catch (e) {} setMsg(res.msg || '시작하지 못했습니다.'); $('startBtn').disabled = false; return; }
+  Object.assign(S, {sid, name, token:res.token, set:res.set, cls:res.cls, num:res.num, cards:res.cards, ga:res.ga, na:res.na,
+                    policy:{max:res.maxViolations}, startedAt:res.startedAt, offset:res.serverNow - Date.now(), endAt:res.startedAt + res.durationMin * 60000});
+  ['sid', 'sname', 'code'].forEach(i => $(i).disabled = true);
+  $('startBtn').hidden = true; $('codeWrap').hidden = true; $('bar').hidden = false;
+  $('intro').hidden = true; $('exam').hidden = false;
+  render(); updateBar();
+  try { const saved = localStorage.getItem('exam_' + S.token); if (saved) applyAnswers(JSON.parse(saved)); } catch (e) {}
+  S.started = true; lockKeys(); window.scrollTo(0, 0);
+  setInterval(tick, 1000); tick();
+}
+$('startBtn').addEventListener('click', onStart);
+['sid', 'sname', 'code'].forEach(i => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') onStart(); }));
+
+function tick() {
+  if (S.submitted) return;
+  const left = Math.max(0, S.endAt - nowSrv()), m = Math.floor(left / 60000), s = Math.floor(left / 1000) % 60;
+  $('timer').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  $('timer').classList.toggle('warn', left <= 5 * 60000);
+  if (left <= 0 && S.started && !S.submitting) submit('시간종료');
+}
+
+/* ───────── 제출 ───────── */
+function confirmSubmit() {
+  const a = collect(), miss = [];
+  if (Object.values(a.q1).some(v => !v)) miss.push('1번 (분류하지 않은 정보가 있음)');
+  if (!a.q2.concept.trim() || !a.q2.need.trim()) miss.push('2번');
+  [3, 4].forEach(n => { if (!a['q' + n].threat || !a['q' + n].feature.trim()) miss.push(n + '번'); });
+  if (!a.q5.info || !a.q5.tech || !a.q5.concept.trim()) miss.push('5번 1)');
+  if (a.q5.eth.some(x => !x.trim())) miss.push('5번 2)');
+  $('mTitle').textContent = '제출하시겠습니까?';
+  $('mBody').innerHTML = (miss.length ? `<p class="bad">아직 답하지 않은 문항이 있습니다: ${esc(miss.join(', '))}</p>` : '<p>모든 문항에 답했습니다.</p>') + '<p>제출한 뒤에는 고칠 수 없습니다.</p>';
+  $('modal').hidden = false;
+}
+$('mNo').addEventListener('click', () => { $('modal').hidden = true; });
+$('mYes').addEventListener('click', () => { $('modal').hidden = true; submit('정상'); });
+
+let lastPayload = null;
+async function submit(reason) {
+  if (S.submitted || S.submitting) return;
+  S.submitting = true; $('lock').hidden = true; $('modal').hidden = true;
+  lastPayload = {action:'submit', sid:S.sid, token:S.token, reason, answers:collect(), stats:{v:S.v, fsExits:S.fsExits, pasteTries:S.pasteTries}};
+  await send(reason);
+}
+async function send(reason) {
+  $('sending').hidden = false; $('retryBtn').hidden = true; $('dlBtn').hidden = true;
+  $('sendTitle').textContent = '답안을 제출하는 중입니다…';
+  $('sendBody').innerHTML = reason && reason !== '정상' ? `<p class="bad">${reason === '시간종료' ? '시험 시간이 끝났습니다.' : '이탈 횟수가 한계에 도달했습니다.'} 지금까지 쓴 답안을 제출합니다.</p>` : '';
+  let res = null;
+  for (let i = 0; i < 3 && !(res && res.ok); i++) {
+    try { res = await api(lastPayload, 20000); } catch (e) { res = null; }
+    if (!(res && res.ok) && i < 2) await new Promise(r => setTimeout(r, 2500));
+  }
+  if (res && res.ok) { finish(res, reason); return; }
+  S.submitting = false;
+  $('sendTitle').textContent = '제출하지 못했습니다';
+  $('sendBody').innerHTML = `<p class="bad">${esc((res && res.msg) || '서버에 연결하지 못했습니다.')}</p><p>네트워크를 확인하고 [다시 제출]을 누르세요. 계속 안 되면 [답안 파일 저장]을 눌러 파일을 선생님께 보여 주세요.</p>`;
+  $('retryBtn').hidden = false; $('dlBtn').hidden = false;
+}
+$('retryBtn').addEventListener('click', () => { S.submitting = true; send(lastPayload && lastPayload.reason); });
+$('dlBtn').addEventListener('click', () => {
+  const b = new Blob([JSON.stringify(lastPayload, null, 1)], {type:'text/plain'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = `답안_${S.sid}_${S.name}.txt`; a.click();
+});
+function finish(res, reason) {
+  S.submitted = true; S.submitting = false;
+  $('sending').hidden = true; $('exam').hidden = true; $('bar').hidden = true;
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+  try { if (navigator.keyboard && navigator.keyboard.unlock) navigator.keyboard.unlock(); } catch (e) {}
+  try { localStorage.removeItem('exam_' + S.token); } catch (e) {}
+  $('done').hidden = false;
+  $('done').innerHTML = `<div class="box"><p class="ok">제출이 완료되었습니다</p>
+    <p>${esc(S.sid)} ${esc(S.name)}</p><p>제출 시각 ${esc(res.at || res.receipt)}</p>
+    ${reason && reason !== '정상' ? `<p class="note">(${reason === '시간종료' ? '시간 종료로 자동 제출' : '이탈 횟수 초과로 자동 제출'})</p>` : ''}
+    <p>이 화면을 선생님께 보여 준 뒤 조용히 기다리세요. 점수와 정답은 시험이 모두 끝난 뒤 안내됩니다.</p></div>`;
+}
+</script>
+</body>
+</html>
